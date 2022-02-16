@@ -1,7 +1,6 @@
 // A macro for various combinations of attack and damage possibilities for Sunny.
 
 //Additional Todos:
-//0. Roll dice on screen
 //1. Check for Crit and apply crit damage changes
 //2. Add weapon select
 //3. Get character based modifiers to remove hardcoded values (dexmod, profbonus, etc)
@@ -16,19 +15,19 @@ const mainHtml = `
         <legend>Apply Attack Options</legend>
         <div>
             <label>Attack Type:</label>
-            <select id="attack-type" name="attak-type">
+            <select id="attack-type" name="attack-type">
                 <option value="Normal">Normal</option>
                 <option value="Advantage">Advantage</option>
                 <option value="Disadvantage">Disadvantage</option>
             </select>
         </div>
         <div>
-        <input type="checkbox" id="sharpshooter" value="sharpshooter">        
-        <label for="sharpshooter">Sharpshooter</label>
+            <input type="checkbox" id="sharpshooter" value="sharpshooter">        
+            <label for="sharpshooter">Sharpshooter</label>
         </div>
         <div>
-        <input type="checkbox" id="blessed" value="blessed">   
-        <label for="blessed">Blessed</label>
+            <input type="checkbox" id="blessed" value="blessed">   
+            <label for="blessed">Blessed</label>
         </div>
         <div>
             <label> Battle Maneuver:</label>
@@ -48,22 +47,23 @@ const AttackType = {
     Disadvantage: "Disadvantage"
 }
 
-class AttackSummary {
+class ActionSummary {
     constructor(html) {
         this.attackType = html.find('[id="attack-type"]').val();
-        this.hasBattleManeuver = html.find('[id="battle-maneuver"]').val() != "None";
+        this.battleManeuver = html.find('[id="battle-maneuver"]').val();
+        this.hasBattleManeuver = this.battleManeuver != "None";
         this.isSharpshooter = html.find('[id="sharpshooter"]')[0].checked;
         this.isBlessed = html.find('[id="blessed"]')[0].checked;
 
         // Guessing these are character specific. Rename and/or load per character?
-        this.sixConst = 6 
-        this.fourConst = 4
-        this.twoConst = 2
+        this.sixConst = 6;
+        this.fourConst = 4;
+        this.twoConst = 2;
     }
 
     getAttackFormula() {
-        let attackFormula = "1d20"
-        switch (attackType) {
+        let attackFormula = "1d20";
+        switch (this.attackType) {
             case AttackType.Normal:
                 attackFormula = "1d20";
                 break;
@@ -77,51 +77,58 @@ class AttackSummary {
                 break;
         }
 
-        attackFormula += sixConst
+        attackFormula += ` + ${this.sixConst}`;
         
-        if (isSharpshooter) {
-            attackFormula += " - 5"
+        if (this.isSharpshooter) {
+            attackFormula += " - 5";
         }
-        if (isBlessed) {
-            attackFormula += " + 1d4"
+        if (this.isBlessed) {
+            attackFormula += " + 1d4";
         }
 
-        return attackFormula
+        return attackFormula;
     }
 
     getDamageFormula() {
-        let damageFormula = `1d4 + ${fourConst} + ${twoConst}`
-        if (isSharpshooter) {
-            damageFormula += " + 10"
+        let damageFormula = `1d4 + ${this.fourConst} + ${this.twoConst}`;
+        if (this.isSharpshooter) {
+            damageFormula += " + 10";
         }
-        if (hasBattleManeuver) {
+        if (this.hasBattleManeuver) {
             damageFormula += " + 1d8";
         }
 
-        return damageFormula
+        return damageFormula;
     }
 
     getAttackMessage() {
-        let messageText = `${attackType}`;
+        let messageText = `${this.attackType}`;
 
-        if (isSharpshooter) {
-            messageText += ", Sharpshooter"
+        if (this.isSharpshooter) {
+            messageText += ", Sharpshooter";
         }
     
-        if (hasBattleManeuver) {
-            messageText += `, ${battleManeuver}`
+        if (this.hasBattleManeuver) {
+            messageText += `, ${this.battleManeuver}`;
         }
     
-        if (isBlessed) {
-            messageText += ", Blessed"
+        if (this.isBlessed) {
+            messageText += ", Blessed";
         }
 
-        return messageText
+        return messageText;
     }
 }
 
 let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
-    ChatMessage.create({
+    let pool = PoolTerm.fromRolls([attackRoll, damageRoll]);
+    let roll = Roll.fromTerms([pool]);
+    let d20Roll = attackRoll.dice[0].total;
+    let d20IconClass = d20Roll == 20 ? " max" : d20Roll == 1 ? " min" : "";
+    let chatOptions = {
+        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+        roll: roll,
+        rollMode: game.settings.get("core", "rollMode"),
         content: `
             <div class="dice-roll">
                 <b>${messageText}</b>
@@ -133,7 +140,7 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
                         <div>${attackRoll.formula} = ${attackRoll.total}</div>
                         <div>${attackRoll.result} = ${attackRoll.total}</div>
                         <ol class="dice-rolls">
-                            <li class="roll die d20">${attackRoll.dice[0].total}</li>
+                            <li class="roll die d20${d20IconClass}">${d20Roll}</li>
                         </ol>
                     </section>
                 </div>
@@ -146,23 +153,24 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
                 </div>
                 </div>
             </div>
-        `,
-    });
+        `
+    }
+    ChatMessage.create(chatOptions);
 }
 
 let primaryButtonCallback = async (html) => {
-    let attackSummary = AttackSummary(html);
+    let actionSummary = new ActionSummary(html);
 
-    let attackFormula = attackSummary.getAttackFormula();
-    let damageFormula = attackSummary.getDamageFormula();
-    
+    let attackFormula = actionSummary.getAttackFormula();
     let attackRoll = await new Roll(attackFormula).roll();
+
+    //TODO: Check for Crit and inform damageRoll
+
+    let damageFormula = actionSummary.getDamageFormula();
     let damageRoll = await new Roll(damageFormula).roll();
 
-    //TODO: Roll dice on screen
-
     outputChatMessageResult(
-        messageText=attackFormula.getAttackMessage(),
+        messageText=actionSummary.getAttackMessage(),
         attackRoll=attackRoll,
         damageRoll=damageRoll
     );
@@ -173,11 +181,11 @@ async function main(){
         title: "Let 'em Fly!",
         content: mainHtml,
         buttons: {
-            one: new DialogButton(
-                icon="<i class='fas fa-bullseye'></i>",
-                label="Attack!",
-                callback=primaryButtonCallback
-            )
+            one: {
+                icon:"<i class='fas fa-bullseye'></i>",
+                label:"Attack!",
+                callback: primaryButtonCallback
+            }
         },
     });
     dialog.render(true)

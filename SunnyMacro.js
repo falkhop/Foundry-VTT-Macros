@@ -120,15 +120,6 @@ class AttackSummary {
     }
 }
 
-class DialogButton {
-    constructor(icon, label, callback) {
-        this.icon = icon;
-        this.label = label;
-        this.callback = callback;
-    }
-}
-
-
 let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
     ChatMessage.create({
         content: `

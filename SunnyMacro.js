@@ -10,22 +10,6 @@
 //5. Refactor for improved readability/reusability
 //6. Hit checks and autoupdate target health
 
-class DialogButton {
-    constructor(icon, label, callback) {
-        this.icon = icon;
-        this.label = label;
-        this.callback = callback;
-    }
-}
-
-const AttackType = {
-    Normal: "Normal",
-    Advantage: "Advantage",
-    Disadvantage: "Disadvantage"
-}
-
-const title = "Let 'em Fly!"
-
 const mainHtml = `
     <form>   
         <fieldset>
@@ -57,6 +41,12 @@ const mainHtml = `
         </fieldset>
     </form>
 `
+
+const AttackType = {
+    Normal: "Normal",
+    Advantage: "Advantage",
+    Disadvantage: "Disadvantage"
+}
 
 class AttackSummary {
     constructor(html) {
@@ -130,6 +120,15 @@ class AttackSummary {
     }
 }
 
+class DialogButton {
+    constructor(icon, label, callback) {
+        this.icon = icon;
+        this.label = label;
+        this.callback = callback;
+    }
+}
+
+
 let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
     ChatMessage.create({
         content: `
@@ -180,7 +179,7 @@ let primaryButtonCallback = async (html) => {
 
 async function main(){
     let dialog = new Dialog({
-        title: dialogTitle,
+        title: "Let 'em Fly!",
         content: mainHtml,
         buttons: {
             one: new DialogButton(

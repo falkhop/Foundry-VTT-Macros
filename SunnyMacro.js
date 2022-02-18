@@ -3,9 +3,8 @@
 //Additional Todos:
 //1. Check for Crit and apply crit damage changes
 //2. Add weapon select
-//3. Get character based modifiers to remove hardcoded values (dexmod, profbonus, etc)
-//4. Tie in checks for resource availability (superiority dice, etc)
-//4.5 Update count of remaining resources when resource is used
+//3. Tie in checks for resource availability (superiority dice, etc)
+//4. Update count of remaining resources when resource is used
 //5. Refactor for improved readability/reusability
 //6. Hit checks and autoupdate target health
 
@@ -55,10 +54,10 @@ class ActionSummary {
         this.isSharpshooter = html.find('[id="sharpshooter"]')[0].checked;
         this.isBlessed = html.find('[id="blessed"]')[0].checked;
 
-        // Guessing these are character specific. Rename and/or load per character?
-        this.sixConst = 6;
-        this.fourConst = 4;
-        this.twoConst = 2;
+        this.attackStatModifier = token.actor.data.data.abilities.dex.mod;
+        this.proficiencyModifier = token.actor.data.data.attributes.prof;
+        this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
+        this.otherDamageBonus = 2; //Throwing Weapon Fighting Style
     }
 
     getAttackFormula() {
@@ -77,7 +76,7 @@ class ActionSummary {
                 break;
         }
 
-        attackFormula += ` + ${this.sixConst}`;
+        attackFormula += ` + ${this.attackModifier}`;
         
         if (this.isSharpshooter) {
             attackFormula += " - 5";
@@ -90,12 +89,12 @@ class ActionSummary {
     }
 
     getDamageFormula() {
-        let damageFormula = `1d4 + ${this.fourConst} + ${this.twoConst}`;
+        let damageFormula = `1d4[piercing] + ${this.attackStatModifier} + ${this.otherDamageBonus}`;
         if (this.isSharpshooter) {
             damageFormula += " + 10";
         }
         if (this.hasBattleManeuver) {
-            damageFormula += " + 1d8";
+            damageFormula += " + 1d8[piercing]";
         }
 
         return damageFormula;

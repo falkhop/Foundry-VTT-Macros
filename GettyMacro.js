@@ -3,9 +3,8 @@
 //Additional Todos:
 //1. Check for Crit and apply crit damage changes
 //2. Add weapon select
-//3. Get character based modifiers to remove hardcoded values (dexmod, profbonus, etc)
-//4. Tie in checks for resource availability (superiority dice, etc)
-//4.5 Update count of remaining resources when resource is used
+//3. Tie in checks for resource availability (superiority dice, etc)
+//4. Update count of remaining resources when resource is used
 //5. Refactor for improved readability/reusability
 //6. Hit checks and autoupdate target health
 
@@ -65,9 +64,10 @@ class ActionSummary {
         this.isZephyrStrike = html.find('[id="zephyr-strike"]')[0].checked;
         this.isBlessed = html.find('[id="blessed"]')[0].checked;
 
-        // Guessing these are character specific. Rename and/or load per character?
-        this.eightConst = 8;
-        this.fourConst = 4;
+        this.attackStatModifier = token.actor.data.data.abilities.dex.mod;
+        this.proficiencyModifier = token.actor.data.data.attributes.prof;
+        this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
+        this.otherAttackModifier = 2; //Archery Fighting Style
     }
 
     getAttackFormula() {
@@ -86,7 +86,7 @@ class ActionSummary {
                 break;
         }
 
-        attackFormula += ` + ${this.eightConst}`;
+        attackFormula += ` + ${this.attackModifier} + ${this.otherAttackModifier}`;
         
         if (this.isSharpshooter) {
             attackFormula += " - 5";
@@ -99,7 +99,7 @@ class ActionSummary {
     }
 
     getDamageFormula() {
-        let damageFormula = `1d6 + ${this.fourConst}`;
+        let damageFormula = `1d6[piercing] + ${this.attackModifier}`;
         if (this.isSharpshooter) {
             damageFormula += " + 10";
         }
@@ -107,13 +107,13 @@ class ActionSummary {
             damageFormula += " + 1d4";
         }
         if (this.isGatheredSwarm) {
-            damageFormula += " + 1d6";
+            damageFormula += " + 1d6[piercing]";
         }
         if (this.isHuntersMark) {
             damageFormula += " + 1d6";
         }
         if (this.isZephyrStrike) {
-            damageFormula += " + 1d8";
+            damageFormula += " + 1d8[force]";
         }
 
         return damageFormula;

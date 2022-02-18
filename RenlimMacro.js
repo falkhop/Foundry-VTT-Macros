@@ -3,9 +3,8 @@
 //Additional Todos:
 //1. Check for Crit and apply crit damage changes
 //2. Add weapon select
-//3. Get character based modifiers to remove hardcoded values (dexmod, profbonus, etc)
-//4. Tie in checks for resource availability (superiority dice, etc)
-//4.5 Update count of remaining resources when resource is used
+//3. Tie in checks for resource availability (superiority dice, etc)
+//4. Update count of remaining resources when resource is used
 //5. Refactor for improved readability/reusability
 //6. Hit checks and autoupdate target health
 
@@ -50,9 +49,9 @@ class ActionSummary {
         this.isNecroticShroud = html.find('[id="necrotic-shroud"]')[0].checked;
         this.isBlessed = html.find('[id="blessed"]')[0].checked;
 
-        // Guessing these are character specific. Rename and/or load per character?
-        this.sixConst = 6;
-        this.fourConst = 4;
+        this.attackStatModifier = token.actor.data.data.abilities.cha.mod;
+        this.proficiencyModifier = token.actor.data.data.attributes.prof;
+        this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
     }
 
     getAttackFormula() {
@@ -71,7 +70,7 @@ class ActionSummary {
                 break;
         }
 
-        attackFormula += ` + ${this.sixConst}`;
+        attackFormula += ` + ${this.attackModifier}`;
         
         if (this.isBlessed) {
             attackFormula += " + 1d4";
@@ -81,7 +80,7 @@ class ActionSummary {
     }
 
     getDamageFormula() {
-        let damageFormula = `2d6 + ${this.fourConst}`;
+        let damageFormula = `2d6[slashing] + ${this.attackStatModifier}`;
         if (this.isConsumingSeal) {
             damageFormula += " + 2d6[necrotic]";
         }
@@ -169,11 +168,11 @@ let primaryButtonCallback = async (html) => {
 
 async function main(){
     let dialog = new Dialog({
-        title: "Let 'em Fly!",
+        title: "Lay them low",
         content: mainHtml,
         buttons: {
             one: {
-                icon:"<i class='fas fa-bullseye'></i>",
+                icon:"<i class='fas fa-skull'></i>",
                 label:"Attack!",
                 callback: primaryButtonCallback
             }

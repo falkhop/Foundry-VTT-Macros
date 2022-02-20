@@ -212,7 +212,7 @@ async function main(){
         content: mainHtml,
         buttons: {
             one: {
-                icon:"<i class='fas fa-bullseye'></i>",
+                icon:"<i class='fas fa-spider'></i>",
                 label:"Attack!",
                 callback: primaryButtonCallback
             }

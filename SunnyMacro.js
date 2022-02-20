@@ -88,13 +88,14 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula() {
-        let damageFormula = `1d4[piercing] + ${this.attackStatModifier} + ${this.otherDamageBonus}`;
+    getDamageFormula(critModifier) {
+        let numWeaponDice = 1 * critModifier;
+        let damageFormula = `${numWeaponDice}d4[piercing] + ${this.attackStatModifier} + ${this.otherDamageBonus}`;
         if (this.isSharpshooter) {
             damageFormula += " + 10";
         }
         if (this.hasBattleManeuver) {
-            damageFormula += " + 1d8[piercing]";
+            damageFormula += ` + ${numWeaponDice}d8[piercing]`;
         }
 
         return damageFormula;
@@ -116,7 +117,7 @@ class ActionSummary {
         }
 
         return messageText;
-    }
+    }iu 
 }
 
 let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
@@ -163,9 +164,8 @@ let primaryButtonCallback = async (html) => {
     let attackFormula = actionSummary.getAttackFormula();
     let attackRoll = await new Roll(attackFormula).roll();
 
-    //TODO: Check for Crit and inform damageRoll
-
-    let damageFormula = actionSummary.getDamageFormula();
+    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
+    let damageFormula = actionSummary.getDamageFormula(critModifier);
     let damageRoll = await new Roll(damageFormula).roll();
 
     outputChatMessageResult(

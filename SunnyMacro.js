@@ -58,9 +58,12 @@ class ActionSummary {
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
         this.otherDamageBonus = 2; //Throwing Weapon Fighting Style
+
+        this.attackRoll = null;
+        this.damageRoll = null;
     }
 
-    getAttackFormula() {
+    _getAttackFormula() {
         let attackFormula = "1d20";
         switch (this.attackType) {
             case AttackType.Normal:
@@ -88,7 +91,7 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula(critModifier) {
+    _getDamageFormula(critModifier) {
         let numWeaponDice = 1 * critModifier;
         let damageFormula = `${numWeaponDice}d4[piercing] + ${this.attackStatModifier} + ${this.otherDamageBonus}`;
         if (this.isSharpshooter) {
@@ -101,7 +104,7 @@ class ActionSummary {
         return damageFormula;
     }
 
-    getAttackMessage() {
+    _getAttackMessage() {
         let messageText = `${this.attackType}`;
 
         if (this.isSharpshooter) {
@@ -117,62 +120,63 @@ class ActionSummary {
         }
 
         return messageText;
-    }iu 
-}
-
-let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
-    let pool = PoolTerm.fromRolls([attackRoll, damageRoll]);
-    let roll = Roll.fromTerms([pool]);
-    let d20Roll = attackRoll.dice[0].total;
-    let d20IconClass = d20Roll == 20 ? " max" : d20Roll == 1 ? " min" : "";
-    let chatOptions = {
-        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        roll: roll,
-        rollMode: game.settings.get("core", "rollMode"),
-        content: `
-            <div class="dice-roll">
-                <b>${messageText}</b>
-                <div class="dice-result">
-                <h4 class="dice-total">Attack Total: ${attackRoll.total}</h4>
-                <div class="dice-tooltip">
-                    <section class="tooltip-part">
-                    <div class="dice">
-                        <div>${attackRoll.formula} = ${attackRoll.total}</div>
-                        <div>${attackRoll.result} = ${attackRoll.total}</div>
-                        <ol class="dice-rolls">
-                            <li class="roll die d20${d20IconClass}">${d20Roll}</li>
-                        </ol>
-                    </section>
-                </div>
-                <h4 class="dice-total">Damage Total: ${damageRoll.total}</h4>
-                <div class="dice-tooltip">
-                    <section class="tooltip-part">
-                        <div>${damageRoll.formula} = ${damageRoll.total}</div>
-                        <div>${damageRoll.result} = ${damageRoll.total}</div>
-                    </section>
-                </div>
-                </div>
-            </div>
-        `
     }
-    ChatMessage.create(chatOptions);
+
+    performActionsAsync = async () => {
+    let attackFormula = _getAttackFormula();
+    this.attackRoll = await new Roll(attackFormula).roll();
+
+    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
+    let damageFormula = _getDamageFormula(critModifier);
+    this.damageRoll = await new Roll(damageFormula).roll();
+    }
+
+    toChatMessage = () => {
+        if (this.attackRoll == null || this.damageRoll == null) {
+            return;
+        }
+        let pool = PoolTerm.fromRolls([this.attackRoll, this.damageRoll]);
+        let roll = Roll.fromTerms([pool]);
+        let d20Roll = this.attackRoll.dice[0].total;
+        let d20IconClass = d20Roll == 20 ? " max" : d20Roll == 1 ? " min" : "";
+        let chatOptions = {
+            type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+            roll: roll,
+            rollMode: game.settings.get("core", "rollMode"),
+            content: `
+                <div class="dice-roll">
+                    <b>${this._getAttackMessage()}</b>
+                    <div class="dice-result">
+                    <h4 class="dice-total">Attack Total: ${this.attackRoll.total}</h4>
+                    <div class="dice-tooltip">
+                        <section class="tooltip-part">
+                        <div class="dice">
+                            <div>${this.attackRoll.formula} = ${this.attackRoll.total}</div>
+                            <div>${this.attackRoll.result} = ${this.attackRoll.total}</div>
+                            <ol class="dice-rolls">
+                                <li class="roll die d20${d20IconClass}">${d20Roll}</li>
+                            </ol>
+                        </section>
+                    </div>
+                    <h4 class="dice-total">Damage Total: ${this.damageRoll.total}</h4>
+                    <div class="dice-tooltip">
+                        <section class="tooltip-part">
+                            <div>${this.damageRoll.formula} = ${this.damageRoll.total}</div>
+                            <div>${this.damageRoll.result} = ${this.damageRoll.total}</div>
+                        </section>
+                    </div>
+                    </div>
+                </div>
+            `
+        }
+        ChatMessage.create(chatOptions);
+    }
 }
 
 let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
-
-    let attackFormula = actionSummary.getAttackFormula();
-    let attackRoll = await new Roll(attackFormula).roll();
-
-    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
-    let damageFormula = actionSummary.getDamageFormula(critModifier);
-    let damageRoll = await new Roll(damageFormula).roll();
-
-    outputChatMessageResult(
-        messageText=actionSummary.getAttackMessage(),
-        attackRoll=attackRoll,
-        damageRoll=damageRoll
-    );
+    await actionSummary.performActionsAsync();
+    actionSummary.toChatMessage();
 }
 
 async function main(){

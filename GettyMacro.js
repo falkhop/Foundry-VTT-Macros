@@ -1,12 +1,12 @@
-// A macro for various combinations of attack and damage possibilities for Sunny.
+// A macro for various combinations of attack and damage possibilities for Getty, a Swarmkeeper Ranger.
 
 //Additional Todos:
-//1. Check for Crit and apply crit damage changes
-//2. Add weapon select
-//3. Tie in checks for resource availability (superiority dice, etc)
-//4. Update count of remaining resources when resource is used
-//5. Refactor for improved readability/reusability
-//6. Hit checks and autoupdate target health
+//1. Add weapon select
+//2. Tie in checks for resource availability (superiority dice, etc)
+//3. Update count of remaining resources when resource is used
+//4. Refactor for improved readability/reusability
+//5. Hit checks and autoupdate target health
+//6. Fix checkbox label alignment
 
 const mainHtml = `
     <form>   
@@ -67,7 +67,7 @@ class ActionSummary {
         this.attackStatModifier = token.actor.data.data.abilities.dex.mod;
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
-        this.otherAttackModifier = 2; //Archery Fighting Style
+        this.specialAttackModifier = 2; //Archery Fighting Style
     }
 
     getAttackFormula() {
@@ -86,7 +86,7 @@ class ActionSummary {
                 break;
         }
 
-        attackFormula += ` + ${this.attackModifier} + ${this.otherAttackModifier}`;
+        attackFormula += ` + ${this.attackModifier} + ${this.specialAttackModifier}`;
         
         if (this.isSharpshooter) {
             attackFormula += " - 5";
@@ -98,22 +98,23 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula() {
-        let damageFormula = `1d6[piercing] + ${this.attackModifier}`;
+    getDamageFormula(critModifier) {
+        let numWeaponDice = 1 * critModifier;
+        let damageFormula = `${numWeaponDice}d6[piercing] + ${this.attackModifier}`;
         if (this.isSharpshooter) {
             damageFormula += " + 10";
         }
         if (this.isFavoredFoe) {
-            damageFormula += " + 1d4";
+            damageFormula += ` + ${numWeaponDice}d4`;
         }
         if (this.isGatheredSwarm) {
-            damageFormula += " + 1d6[piercing]";
+            damageFormula += ` + ${numWeaponDice}d6[piercing]`;
         }
         if (this.isHuntersMark) {
-            damageFormula += " + 1d6";
+            damageFormula += ` + ${numWeaponDice}d6`;
         }
         if (this.isZephyrStrike) {
-            damageFormula += " + 1d8[force]";
+            damageFormula += ` + ${numWeaponDice}d8[force]`;
         }
 
         return damageFormula;
@@ -194,9 +195,8 @@ let primaryButtonCallback = async (html) => {
     let attackFormula = actionSummary.getAttackFormula();
     let attackRoll = await new Roll(attackFormula).roll();
 
-    //TODO: Check for Crit and inform damageRoll
-
-    let damageFormula = actionSummary.getDamageFormula();
+    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
+    let damageFormula = actionSummary.getDamageFormula(critModifier);
     let damageRoll = await new Roll(damageFormula).roll();
 
     outputChatMessageResult(
@@ -208,14 +208,18 @@ let primaryButtonCallback = async (html) => {
 
 async function main(){
     let dialog = new Dialog({
-        title: "Let 'em Fly!",
+        title: "Unleash the swarm!",
         content: mainHtml,
         buttons: {
-            one: {
+            yes: {
                 icon:"<i class='fas fa-spider'></i>",
                 label:"Attack!",
                 callback: primaryButtonCallback
-            }
+            },
+            no: {
+                icon: "<i class='fas fa-times'></i>",
+                label: "Cancel"
+            },
         },
     });
     dialog.render(true)

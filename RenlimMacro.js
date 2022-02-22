@@ -1,12 +1,13 @@
-// A macro for various combinations of attack and damage possibilities for Sunny.
+// A macro for various combinations of attack and damage possibilities for Renlim, a Painkiller Illrigger (a Matthew Colville custom class).
+// https://thedeathdieclub.com/wp-content/uploads/2019/02/IllriggerClass.pdf
 
 //Additional Todos:
-//1. Check for Crit and apply crit damage changes
-//2. Add weapon select
-//3. Tie in checks for resource availability (superiority dice, etc)
-//4. Update count of remaining resources when resource is used
-//5. Refactor for improved readability/reusability
-//6. Hit checks and autoupdate target health
+//1. Add weapon select
+//2. Tie in checks for resource availability (superiority dice, etc)
+//3. Update count of remaining resources when resource is used
+//4. Refactor for improved readability/reusability
+//5. Hit checks and autoupdate target health
+//6. Fix checkbox label alignment
 
 const mainHtml = `
     <form>   
@@ -21,8 +22,9 @@ const mainHtml = `
             </select>
         </div>
         <div>
-            <input type="checkbox" id="consume-seal" value="consume-seal">        
-            <label for="consume-seal">Consume Seal</label>
+            <input type="checkbox" id="consume-seal" value="consume-seal" onclick="var input = document.getElementById('number-seals-consumed'); if(this.checked){ input.disabled = false; input.focus();}else{input.disabled=true;}">        
+            <label for="consume-seal">Consume Seal(s)</label>
+            <input style="width: 30px;" type="number" id="number-seals-consumed" name="number-seals-consumed" min="1" value="1" disabled="disabled">
         </div>
         <div>
             <input type="checkbox" id="necrotic-shroud" value="necrotic-shroud">        
@@ -46,6 +48,7 @@ class ActionSummary {
     constructor(html) {
         this.attackType = html.find('[id="attack-type"]').val();
         this.isConsumingSeal = html.find('[id="consume-seal"]')[0].checked;
+        this.numSealsConsumed = html.find('[id="number-seals-consumed"]').val();
         this.isNecroticShroud = html.find('[id="necrotic-shroud"]')[0].checked;
         this.isBlessed = html.find('[id="blessed"]')[0].checked;
 
@@ -79,10 +82,12 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula() {
-        let damageFormula = `2d6[slashing] + ${this.attackStatModifier}`;
+    getDamageFormula(critModifier) {
+        let numWeaponDice = 2 * critModifier;
+        let numSealDice = 2 * critModifier * this.numSealsConsumed;
+        let damageFormula = `${numWeaponDice}d6[slashing] + ${this.attackStatModifier}`;
         if (this.isConsumingSeal) {
-            damageFormula += " + 2d6[necrotic]";
+            damageFormula += ` + ${numSealDice}d6[necrotic]`;
         }
         if (this.isNecroticShroud) {
             damageFormula += " + 4[necrotic]";
@@ -91,11 +96,21 @@ class ActionSummary {
         return damageFormula;
     }
 
+    getSelfHealing(critModifier){
+        let sealSelfHealingValue = "";
+        let numSealDice = 2 * critModifier * this.numSealsConsumed;
+        if (this.isConsumingSeal) {
+            sealSelfHealingValue = 2 * numSealDice;
+        }
+
+        return sealSelfHealingValue;
+    }
+
     getAttackMessage() {
         let messageText = `${this.attackType}`;
 
         if (this.isConsumingSeal) {
-            messageText += ", Consuming Seal";
+            messageText += `, Consuming Seal (${this.numSealsConsumed})`;
         }
         
         if (this.isNecroticShroud) {
@@ -110,7 +125,7 @@ class ActionSummary {
     }
 }
 
-let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
+let outputChatMessageResult = (messageText, attackRoll, damageRoll, selfHealing) => {
     let pool = PoolTerm.fromRolls([attackRoll, damageRoll]);
     let roll = Roll.fromTerms([pool]);
     let d20Roll = attackRoll.dice[0].total;
@@ -141,6 +156,7 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
                         <div>${damageRoll.result} = ${damageRoll.total}</div>
                     </section>
                 </div>
+                <h4 class="dice-total">Healing Total: ${selfHealing}</h4>
                 </div>
             </div>
         `
@@ -154,15 +170,18 @@ let primaryButtonCallback = async (html) => {
     let attackFormula = actionSummary.getAttackFormula();
     let attackRoll = await new Roll(attackFormula).roll();
 
-    //TODO: Check for Crit and inform damageRoll
-
-    let damageFormula = actionSummary.getDamageFormula();
+    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
+    let damageFormula = actionSummary.getDamageFormula(critModifier);
     let damageRoll = await new Roll(damageFormula).roll();
+    
+    let sealSelfHealing = actionSummary.getSelfHealing(critModifier);
+    
 
     outputChatMessageResult(
         messageText=actionSummary.getAttackMessage(),
         attackRoll=attackRoll,
-        damageRoll=damageRoll
+        damageRoll=damageRoll,
+        selfHealing=sealSelfHealing
     );
 }
 
@@ -175,7 +194,11 @@ async function main(){
                 icon:"<i class='fas fa-skull'></i>",
                 label:"Attack!",
                 callback: primaryButtonCallback
-            }
+            },
+            no: {
+                icon: "<i class='fas fa-times'></i>",
+                label: "Cancel"
+            },
         },
     });
     dialog.render(true)

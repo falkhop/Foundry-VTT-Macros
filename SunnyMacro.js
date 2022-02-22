@@ -1,12 +1,12 @@
-// A macro for various combinations of attack and damage possibilities for Sunny.
+// A macro for various combinations of attack and damage possibilities for Sunny, a throwing weapon battlemaster fighter.
 
 //Additional Todos:
-//1. Check for Crit and apply crit damage changes
-//2. Add weapon select
-//3. Tie in checks for resource availability (superiority dice, etc)
-//4. Update count of remaining resources when resource is used
-//5. Refactor for improved readability/reusability
-//6. Hit checks and autoupdate target health
+//1. Add weapon select
+//2. Tie in checks for resource availability (superiority dice, etc)
+//3. Update count of remaining resources when resource is used
+//4. Refactor for improved readability/reusability
+//5. Hit checks and autoupdate target health
+//6. Fix checkbox label alignment
 
 const mainHtml = `
     <form>   
@@ -180,11 +180,15 @@ async function main(){
         title: "Let 'em Fly!",
         content: mainHtml,
         buttons: {
-            one: {
+            yes: {
                 icon:"<i class='fas fa-bullseye'></i>",
                 label:"Attack!",
                 callback: primaryButtonCallback
-            }
+            },
+            no: {
+                icon: "<i class='fas fa-times'></i>",
+                label: "Cancel"
+            },
         },
     });
     dialog.render(true)

@@ -55,6 +55,9 @@ class ActionSummary {
         this.attackStatModifier = token.actor.data.data.abilities.cha.mod;
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
+        this.critModifier = 1;
+        this.attackRoll = null;
+        this.damageRoll = null;
     }
 
     getAttackFormula() {
@@ -82,9 +85,9 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula(critModifier) {
-        let numWeaponDice = 2 * critModifier;
-        let numSealDice = 2 * critModifier * this.numSealsConsumed;
+    getDamageFormula() {
+        let numWeaponDice = 2 * this.critModifier;
+        let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
         let damageFormula = `${numWeaponDice}d6[slashing] + ${this.attackStatModifier}`;
         if (this.isConsumingSeal) {
             damageFormula += ` + ${numSealDice}d6[necrotic]`;
@@ -96,9 +99,9 @@ class ActionSummary {
         return damageFormula;
     }
 
-    getSelfHealing(critModifier){
+    getSelfHealing(){
         let sealSelfHealingValue = "";
-        let numSealDice = 2 * critModifier * this.numSealsConsumed;
+        let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
         if (this.isConsumingSeal) {
             sealSelfHealingValue = 2 * numSealDice;
         }
@@ -122,6 +125,19 @@ class ActionSummary {
         }
 
         return messageText;
+    }
+
+    async performAttackRollAsync() {
+        let attackFormula = this.getAttackFormula();
+        this.attackRoll = await new Roll(attackFormula).roll();
+        if (attackRoll.dice[0].total == 20) {
+            this.critModifier = 2;
+        }
+    }
+
+    async performDamageRollAsync() {
+        let damageFormula = this.getDamageFormula();
+        this.damageRoll = await new Roll(damageFormula).roll();
     }
 }
 
@@ -166,22 +182,14 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll, selfHealing)
 
 let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
-
-    let attackFormula = actionSummary.getAttackFormula();
-    let attackRoll = await new Roll(attackFormula).roll();
-
-    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
-    let damageFormula = actionSummary.getDamageFormula(critModifier);
-    let damageRoll = await new Roll(damageFormula).roll();
-    
-    let sealSelfHealing = actionSummary.getSelfHealing(critModifier);
-    
+    await actionSummary.performAttackRollAsync();
+    await actionSummary.performDamageRollAsync();
 
     outputChatMessageResult(
         messageText=actionSummary.getAttackMessage(),
-        attackRoll=attackRoll,
-        damageRoll=damageRoll,
-        selfHealing=sealSelfHealing
+        attackRoll=actionSummary.attackRoll,
+        damageRoll=actionSummary.damageRoll,
+        selfHealing=actionSummary.getSelfHealing()
     );
 }
 

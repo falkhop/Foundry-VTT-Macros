@@ -130,7 +130,7 @@ class ActionSummary {
     async performAttackRollAsync() {
         let attackFormula = this.getAttackFormula();
         this.attackRoll = await new Roll(attackFormula).roll();
-        if (attackRoll.dice[0].total == 20) {
+        if (this.attackRoll.dice[0].total == 20) {
             this.critModifier = 2;
         }
     }

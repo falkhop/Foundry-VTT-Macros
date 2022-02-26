@@ -68,6 +68,9 @@ class ActionSummary {
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
         this.specialAttackModifier = 2; //Archery Fighting Style
+        this.critModifier = 1;
+        this.attackRoll = null;
+        this.damageRoll = null;
     }
 
     getAttackFormula() {
@@ -98,8 +101,8 @@ class ActionSummary {
         return attackFormula;
     }
 
-    getDamageFormula(critModifier) {
-        let numWeaponDice = 1 * critModifier;
+    getDamageFormula() {
+        let numWeaponDice = 1 * this.critModifier;
         let damageFormula = `${numWeaponDice}d6[piercing] + ${this.attackModifier}`;
         if (this.isSharpshooter) {
             damageFormula += " + 10";
@@ -149,6 +152,19 @@ class ActionSummary {
 
         return messageText;
     }
+
+    async performAttackRollAsync() {
+        let attackFormula = this.getAttackFormula();
+        this.attackRoll = await new Roll(attackFormula).roll();
+        if(this.attackRoll.dice[0].total == 20) {
+            this.critModifier = 2;
+        }
+    }
+
+    async performDamageRollAsync() {
+        let damageFormula = this. getDamageFormula();
+        this.damageRoll = await new Roll(damageFormula).roll();
+    }
 }
 
 let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
@@ -191,18 +207,13 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll) => {
 
 let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
-
-    let attackFormula = actionSummary.getAttackFormula();
-    let attackRoll = await new Roll(attackFormula).roll();
-
-    let critModifier = attackRoll.dice[0].total == 20 ? 2 : 1;
-    let damageFormula = actionSummary.getDamageFormula(critModifier);
-    let damageRoll = await new Roll(damageFormula).roll();
+    await actionSummary.performAttackRollAsync();
+    await actionSummary.performDamageRollAsync();
 
     outputChatMessageResult(
         messageText=actionSummary.getAttackMessage(),
-        attackRoll=attackRoll,
-        damageRoll=damageRoll
+        attackRoll=actionSummary.attackRoll,
+        damageRoll=actionSummary.damageRoll
     );
 }
 

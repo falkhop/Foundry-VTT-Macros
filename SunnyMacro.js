@@ -6,9 +6,16 @@
 //3. Update count of remaining resources when resource is used
 //4. Refactor for improved readability/reusability
 //5. Hit checks and autoupdate target health
-//6. Fix checkbox label alignment
+
 
 const mainHtml = `
+    <head>
+    <style>
+    input {
+        vertical-align: -3px;
+    }
+    </style>
+    </head>
     <form>   
         <fieldset>
         <legend>Apply Attack Options</legend>

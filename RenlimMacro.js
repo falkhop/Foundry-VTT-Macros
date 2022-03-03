@@ -7,9 +7,16 @@
 //3. Update count of remaining resources when resource is used
 //4. Refactor for improved readability/reusability
 //5. Hit checks and autoupdate target health
-//6. Fix checkbox label alignment
+
 
 const mainHtml = `
+    <head>
+    <style>
+    input {
+        vertical-align: -3px;
+    }
+    </style>
+    </head>
     <form>   
         <fieldset>
         <legend>Apply Attack Options</legend>
@@ -24,7 +31,7 @@ const mainHtml = `
         <div>
             <input type="checkbox" id="consume-seal" value="consume-seal" onclick="var input = document.getElementById('number-seals-consumed'); if(this.checked){ input.disabled = false; input.focus();}else{input.disabled=true;}">        
             <label for="consume-seal">Consume Seal(s)</label>
-            <input style="width: 30px;" type="number" id="number-seals-consumed" name="number-seals-consumed" min="1" value="1" disabled="disabled">
+            <input style="width: 30px; vertical-align: 1px;" type="number" id="number-seals-consumed" name="number-seals-consumed" min="1" value="1" disabled="disabled">
         </div>
         <div>
             <input type="checkbox" id="necrotic-shroud" value="necrotic-shroud">        

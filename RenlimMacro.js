@@ -2,7 +2,7 @@
 // https://thedeathdieclub.com/wp-content/uploads/2019/02/IllriggerClass.pdf
 
 //Additional Todos:
-//1. Add weapon select
+//1. Add weapon select based on character inventory
 //2. Tie in checks for resource availability (superiority dice, etc)
 //3. Update count of remaining resources when resource is used
 //4. Refactor for improved readability/reusability
@@ -19,7 +19,7 @@ const mainHtml = `
     </head>
     <form>   
         <fieldset>
-        <legend>Apply Attack Options</legend>
+        <legend>Attack Options</legend>
         <div>
             <label>Attack Type:</label>
             <select id="attack-type" name="attack-type">

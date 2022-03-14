@@ -1,60 +1,90 @@
 // A macro for various combinations of attack and damage possibilities for Sunny, a throwing weapon battlemaster fighter.
 
 //Additional Todos:
-//1. Add weapon select
+//1. Add weapon select based on token (actor?) inventory
 //2. Tie in checks for resource availability (superiority dice, etc)
 //3. Update count of remaining resources when resource is used
 //4. Refactor for improved readability/reusability
 //5. Hit checks and autoupdate target health
 
+//1. Get list of all equipped weapons in character inventory
+//2. Generate UI pick list based on items list
+//3. Update damage and attack formulas to use weapon stats
+//4. Roll attack and damage with the appropriate stats (ensure crits are handled correctly)
+//5. Output selected weapon to the output chat message header
 
-const mainHtml = `
-    <head>
-    <style>
-    input {
-        vertical-align: -3px;
+
+class UserInterface {
+    static getEquippedWeapons() {
+        let allWeapons = token.actor.data.items.toObject().filter(i => i.type === "weapon");
+        return allWeapons.filter(i => i.data.equipped === true);
     }
-    </style>
-    </head>
-    <form>   
-        <fieldset>
-        <legend>Apply Attack Options</legend>
-        <div>
-            <label>Attack Type:</label>
-            <select id="attack-type" name="attack-type">
-                <option value="Normal">Normal</option>
-                <option value="Advantage">Advantage</option>
-                <option value="Disadvantage">Disadvantage</option>
-            </select>
-        </div>
-        <div>
-            <input type="checkbox" id="sharpshooter" value="sharpshooter">        
-            <label for="sharpshooter">Sharpshooter</label>
-        </div>
-        <div>
-            <input type="checkbox" id="blessed" value="blessed">   
-            <label for="blessed">Blessed</label>
-        </div>
-        <div>
-            <label> Battle Maneuver:</label>
-            <select id="battle-maneuver" name="battle-maneuver">
-                <option value="None">None</option>
-                <option value="Quick Toss">Quick Toss</option>
-                <option value="Distracting Strike">Distracting Strike</option>
-            </select>
-        </div>
-        </fieldset>
-    </form>
-`
 
-const AttackType = {
-    Normal: "Normal",
-    Advantage: "Advantage",
-    Disadvantage: "Disadvantage"
+    static getMainHtml() {
+        return `
+        <head>
+        <style>
+        input {
+            vertical-align: -3px;
+        }
+        </style>
+        </head>
+        <form>   
+            <fieldset>
+            <legend>Attack Options</legend>
+            <div>
+                <label>Pick Weapon:</label>
+                <select id="weapon" name="weapon">` + UserInterface.getWeaponOptionText() + `</select>
+            </div>
+            <div>
+                <label>Attack Type:</label>
+                <select id="attack-type" name="attack-type">
+                    <option value="Normal">Normal</option>
+                    <option value="Advantage">Advantage</option>
+                    <option value="Disadvantage">Disadvantage</option>
+                </select>
+            </div>
+            <div>
+                <input type="checkbox" id="sharpshooter" value="sharpshooter">        
+                <label for="sharpshooter">Sharpshooter</label>
+            </div>
+            <div>
+                <input type="checkbox" id="blessed" value="blessed">   
+                <label for="blessed">Blessed</label>
+            </div>
+            <div>
+                <label> Battle Maneuver:</label>
+                <select id="battle-maneuver" name="battle-maneuver">
+                    <option value="None">None</option>
+                    <option value="Quick Toss">Quick Toss</option>
+                    <option value="Distracting Strike">Distracting Strike</option>
+                </select>
+            </div>
+            </fieldset>
+        </form>
+    `
+    }
+
+    static getWeaponOptionText(){
+        let equippedWeapons = UserInterface.getEquippedWeapons();
+        let weaponOptionText = "";
+        for(let weapon of equippedWeapons){
+            weaponOptionText += `<option value="${weapon._id}">${weapon.name}</option>`;
+        }
+        return weaponOptionText;
+    };
 }
 
 class ActionSummary {
+    static AttackType = {
+        Normal: "Normal",
+        Advantage: "Advantage",
+        Disadvantage: "Disadvantage"
+    }
+
+
     constructor(html) {
+        this.selectedWeapon = html.find('[id="weapon"').val();
         this.attackType = html.find('[id="attack-type"]').val();
         this.battleManeuver = html.find('[id="battle-maneuver"]').val();
         this.hasBattleManeuver = this.battleManeuver != "None";
@@ -71,16 +101,26 @@ class ActionSummary {
         this.damageRoll = null;
     }
 
+    getWeaponStats() {
+        console.log("SelectedWeaponId: ", this.selectedWeapon)
+        let equippedWeapons = UserInterface.getEquippedWeapons();
+        let weapon = equippedWeapons.filter(i => i._id === this.selectedWeapon);
+        console.log("Equipped Weapons: ", equippedWeapons[0]._id);
+        console.log("Attack Weapon: ", weapon._id);
+        return weapon;
+    }
+
     getAttackFormula() {
+        let weapon = this.getWeaponStats();
         let attackFormula = "1d20";
         switch (this.attackType) {
-            case AttackType.Normal:
+            case ActionSummary.AttackType.Normal:
                 attackFormula = "1d20";
                 break;
-            case AttackType.Advantage:
+            case ActionSummary.AttackType.Advantage:
                 attackFormula = "3d20kh";
                 break;
-            case AttackType.Disadvantage:
+            case ActionSummary.AttackType.Disadvantage:
                 attackFormula = "2d20kl";
                 break;
             default:
@@ -197,7 +237,7 @@ let primaryButtonCallback = async (html) => {
 async function main(){
     let dialog = new Dialog({
         title: "Let 'em Fly!",
-        content: mainHtml,
+        content: UserInterface.getMainHtml(),
         buttons: {
             yes: {
                 icon:"<i class='fas fa-bullseye'></i>",

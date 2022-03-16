@@ -84,7 +84,7 @@ class ActionSummary {
 
 
     constructor(html) {
-        this.selectedWeapon = html.find('[id="weapon"').val();
+        this.selectedWeaponId = html.find('[id="weapon"').val();
         this.attackType = html.find('[id="attack-type"]').val();
         this.battleManeuver = html.find('[id="battle-maneuver"]').val();
         this.hasBattleManeuver = this.battleManeuver != "None";
@@ -102,16 +102,24 @@ class ActionSummary {
     }
 
     getWeaponStats() {
-        console.log("SelectedWeaponId: ", this.selectedWeapon)
         let equippedWeapons = UserInterface.getEquippedWeapons();
-        let weapon = equippedWeapons.filter(i => i._id === this.selectedWeapon);
-        console.log("Equipped Weapons: ", equippedWeapons[0]._id);
-        console.log("Attack Weapon: ", weapon._id);
-        return weapon;
+        let weapon = equippedWeapons.filter(i => i._id === this.selectedWeaponId)[0];
+        console.log(weapon);
+        let weaponStats = {
+            id: weapon._id,
+            name: weapon.name,
+            ability: weapon.ability,
+            proficient: weapon.proficient,
+            attackBonus: weapon.data.attackBonus,
+            damageFormula: weapon.data.damage.parts[0]
+        }
+        console.log("weapon stats:", weaponStats);
+        return weaponStats;
     }
 
     getAttackFormula() {
         let weapon = this.getWeaponStats();
+        console.log("attack formula weapon selected:", weapon.name);
         let attackFormula = "1d20";
         switch (this.attackType) {
             case ActionSummary.AttackType.Normal:

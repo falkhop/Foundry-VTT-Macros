@@ -2,8 +2,6 @@
 // https://thedeathdieclub.com/wp-content/uploads/2019/02/IllriggerClass.pdf
 
 
-
-
 const mainHtml = `
     <head>
     <style>
@@ -52,7 +50,6 @@ class ActionSummary {
         this.damageRoll = null;
     }
 
-
     getDamageFormula() {
         let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
         let damageFormula = `${numSealDice}d6[necrotic]`;
@@ -66,7 +63,7 @@ class ActionSummary {
         return sealSelfHealingValue;
     }
 
-    getAttackMessage() {
+    getMessage() {
         let messageText = `Consuming ${this.numSealsConsumed} Seal(s)`;
         if (this.isCrit) {
             messageText += ` on Critical Hit`
@@ -102,10 +99,15 @@ let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
                     </section>
                 </div>
                 <h4 class="dice-total">Healing Total: ${selfHealing}</h4>
+                <div class="dice-tooltip">
+                    <section class="tooltip-part">
+                        <div>Heal 1 point per die rolled</div>
+                    </section>
+                </div>
                 </div>
             </div>
         `
-    }
+    }  
     ChatMessage.create(chatOptions);
 }
 
@@ -114,7 +116,7 @@ let primaryButtonCallback = async (html) => {
     await actionSummary.performDamageRollAsync();
 
     outputChatMessageResult(
-        messageText=actionSummary.getAttackMessage(),
+        messageText=actionSummary.getMessage(),
         damageRoll=actionSummary.damageRoll,
         selfHealing=actionSummary.getSelfHealing()
     );
@@ -122,7 +124,7 @@ let primaryButtonCallback = async (html) => {
 
 async function main(){
     let dialog = new Dialog({
-        title: "Lay them low",
+        title: "Consume Seals",
         content: mainHtml,
         buttons: {
             one: {

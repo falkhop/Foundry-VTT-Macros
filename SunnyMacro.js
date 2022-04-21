@@ -7,9 +7,9 @@
 //4. Refactor for improved readability/reusability
 //5. Hit checks and autoupdate target health
 
-//1. Get list of all equipped weapons in character inventory
-//2. Generate UI pick list based on items list
-//3. Update damage and attack formulas to use weapon stats
+//1. DONE Get list of all equipped weapons in character inventory
+//2. DONE Generate UI pick list based on items list
+//3. WIP Update damage and attack formulas to use weapon stats
 //4. Roll attack and damage with the appropriate stats (ensure crits are handled correctly)
 //5. Output selected weapon to the output chat message header
 
@@ -109,17 +109,40 @@ class ActionSummary {
             id: weapon._id,
             name: weapon.name,
             ability: weapon.ability,
-            proficient: weapon.proficient,
+            proficient: weapon.data.proficient,
+            finesse: weapon.data.properties.fin,
             attackBonus: weapon.data.attackBonus,
             damageFormula: weapon.data.damage.parts[0]
         }
-        console.log("weapon stats:", weaponStats);
+        console.log("weaponStats:", weaponStats);
+        console.log("damageFormula:", weaponStats.damageFormula[0]);
         return weaponStats;
     }
 
-    getAttackFormula() {
+    getAttackModifier() {
         let weapon = this.getWeaponStats();
-        console.log("attack formula weapon selected:", weapon.name);
+        let attackModifier = 0;
+        if(weapon.ability === undefined && weapon.finesse == true){
+            if(token.actor.data.data.abilities.dex.mod >= token.actor.data.data.abilities.str.mod){
+                attackModifier += token.actor.data.data.abilities.dex.mod;
+            } else {
+                attackModifier += token.actor.data.data.abilities.str.mod;
+            }
+        } else if(weapon.ability == 'dex') {
+            attackModifier += token.actor.data.data.abilities.dex.mod;
+        } else {
+            attackModifier += token.actor.data.data.abilities.str.mod;
+        }
+        
+        console.log("before proficiency: ", attackModifier)
+        if(weapon.proficient == true){
+            attackModifier += token.actor.data.data.attributes.prof;
+        }
+        attackModifier += weapon.attackBonus;
+        return attackModifier;
+    }
+
+    getAttackFormula() {
         let attackFormula = "1d20";
         switch (this.attackType) {
             case ActionSummary.AttackType.Normal:
@@ -135,7 +158,7 @@ class ActionSummary {
                 break;
         }
 
-        attackFormula += ` + ${this.attackModifier}`;
+        attackFormula += ` + ${this.getAttackModifier()}`;
         
         if (this.isSharpshooter) {
             attackFormula += " - 5";
@@ -161,7 +184,8 @@ class ActionSummary {
     }
 
     getAttackMessage() {
-        let messageText = `${this.attackType}`;
+        let weaponName = this.getWeaponStats().name;
+        let messageText = `${weaponName}, ${this.attackType}`;
 
         if (this.isSharpshooter) {
             messageText += ", Sharpshooter";

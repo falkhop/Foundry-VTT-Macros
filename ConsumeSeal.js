@@ -1,6 +1,5 @@
 // A macro to assist with Consuming Seals for Baleful Interdict, a class feature for illriggers (a Matthew Colville custom class).
-// https://thedeathdieclub.com/wp-content/uploads/2019/02/IllriggerClass.pdf
-
+// https://www.titanatelier.com/wp-content/uploads/2021/04/Illrigger_v2.4.pdf
 
 const mainHtml = `
     <head>
@@ -15,17 +14,19 @@ const mainHtml = `
         <legend>Baleful Interdict</legend>
         <div>
             <p> 
-            As a bonus action, burn a spell slot to place a
-            seal on a target within 30 feet. You can do this a number
-            of times equal to your charisma modifier. You replenish
-            all your seals after a long rest.
+            As a bonus
+            action, you can place a seal on a target you can see
+            within 30 feet. You can do this a number of times
+            equal to your Charisma modifier. When you finish
+            a short or long rest, you regain all your seals.
             </p>
             <p>
-            When you or an ally hits a target you can see with a
-            seal on them, you may consume the seals, inflicting 2d6
-            necrotic damage on the target per seal. If you are within
-            30 feet of the target, you heal one point of damage for
-            each die of damage your seals inflict. 
+            When you or an ally hits a target you can see with
+            any seals on it, you can consume the seals to make
+            the attack deal an extra 2d6 necrotic damage to the
+            target per seal consumed. If you are within 30 feet
+            of the target, you regain 2 hit points for each die of
+            damage your seals deals.
             </p>
         </div>
         <div>    
@@ -46,19 +47,20 @@ class ActionSummary {
         this.numSealsConsumed = html.find('[id="number-seals-consumed"]').val();
         this.isCrit = html.find('[id="is-crit"]')[0].checked;
 
+        this.dicePerSeal = 2;
         this.critModifier = 1;
         this.damageRoll = null;
     }
 
     getDamageFormula() {
-        let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
+        let numSealDice = this.dicePerSeal * this.critModifier * this.numSealsConsumed;
         let damageFormula = `${numSealDice}d6[necrotic]`;
 
         return damageFormula;
     }
 
     getSelfHealing(){
-        let sealSelfHealingValue = 2 * this.critModifier * this.numSealsConsumed;
+        let sealSelfHealingValue = 2 * this.dicePerSeal * this.critModifier * this.numSealsConsumed;
 
         return sealSelfHealingValue;
     }
@@ -116,7 +118,7 @@ let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
                 <h4 class="dice-total">Healing Total: ${selfHealing}</h4>
                 <div class="dice-tooltip">
                     <section class="tooltip-part">
-                        <div>Heal 1 point per die rolled</div>
+                        <div>Heal 2 points per die rolled</div>
                     </section>
                 </div>
                 </div>

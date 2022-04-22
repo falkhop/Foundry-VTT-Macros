@@ -1,5 +1,5 @@
 // A macro for various combinations of attack and damage possibilities for Renlim, a Painkiller Illrigger (a Matthew Colville custom class).
-// https://thedeathdieclub.com/wp-content/uploads/2019/02/IllriggerClass.pdf
+// https://www.titanatelier.com/wp-content/uploads/2021/04/Illrigger_v2.4.pdf
 
 //Additional Todos:
 //1. Add weapon select based on character inventory
@@ -62,6 +62,7 @@ class ActionSummary {
         this.attackStatModifier = token.actor.data.data.abilities.cha.mod;
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
+        this.dicePerSeal = 2;
         this.critModifier = 1;
         this.attackRoll = null;
         this.damageRoll = null;
@@ -94,7 +95,7 @@ class ActionSummary {
 
     getDamageFormula() {
         let numWeaponDice = 2 * this.critModifier;
-        let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
+        let numSealDice = this.dicePerSeal * this.critModifier * this.numSealsConsumed;
         let damageFormula = `${numWeaponDice}d6[slashing] + ${this.attackStatModifier}`;
         if (this.isConsumingSeal) {
             damageFormula += ` + ${numSealDice}d6[necrotic]`;
@@ -108,7 +109,7 @@ class ActionSummary {
 
     getSelfHealing(){
         let sealSelfHealingValue = "";
-        let numSealDice = 2 * this.critModifier * this.numSealsConsumed;
+        let numSealDice = this.dicePerSeal * this.critModifier * this.numSealsConsumed;
         if (this.isConsumingSeal) {
             sealSelfHealingValue = 2 * numSealDice;
         }
@@ -145,6 +146,21 @@ class ActionSummary {
     async performDamageRollAsync() {
         let damageFormula = this.getDamageFormula();
         this.damageRoll = await new Roll(damageFormula).roll();
+    }
+
+    async applyHealingAsync() {
+        let selfHealingValue = this.getSelfHealing();
+        let currentHealth = token.actor.data.data.attributes.hp.value;
+        let maxHealth = token.actor.data.data.attributes.hp.max;
+        let updatedHealth;
+
+        if(currentHealth + selfHealingValue < maxHealth){
+            updatedHealth = currentHealth + selfHealingValue;
+        } else {
+            updatedHealth = maxHealth;
+        }
+
+        token.actor.update({"data.attributes.hp.value":updatedHealth});
     }
 }
 
@@ -191,6 +207,7 @@ let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
     await actionSummary.performAttackRollAsync();
     await actionSummary.performDamageRollAsync();
+    await actionSummary.applyHealingAsync();
 
     outputChatMessageResult(
         messageText=actionSummary.getAttackMessage(),

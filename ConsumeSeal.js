@@ -79,6 +79,21 @@ class ActionSummary {
         let damageFormula = this.getDamageFormula();
         this.damageRoll = await new Roll(damageFormula).roll();
     }
+
+    async applyHealingAsync() {
+        let selfHealingValue = this.getSelfHealing();
+        let currentHealth = token.actor.data.data.attributes.hp.value;
+        let maxHealth = token.actor.data.data.attributes.hp.max;
+        let updatedHealth;
+
+        if(currentHealth + selfHealingValue < maxHealth){
+            updatedHealth = currentHealth + selfHealingValue;
+        } else {
+            updatedHealth = maxHealth;
+        }
+
+        token.actor.update({"data.attributes.hp.value":updatedHealth});
+    }
 }
 
 let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
@@ -114,6 +129,7 @@ let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
 let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
     await actionSummary.performDamageRollAsync();
+    await actionSummary.applyHealingAsync();
 
     outputChatMessageResult(
         messageText=actionSummary.getMessage(),

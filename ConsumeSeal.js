@@ -48,6 +48,7 @@ class ActionSummary {
         this.isCrit = html.find('[id="is-crit"]')[0].checked;
 
         this.dicePerSeal = 2;
+        this.healingPerDie = 2;
         this.critModifier = 1;
         this.damageRoll = null;
     }
@@ -60,7 +61,7 @@ class ActionSummary {
     }
 
     getSelfHealing(){
-        let sealSelfHealingValue = 2 * this.dicePerSeal * this.critModifier * this.numSealsConsumed;
+        let sealSelfHealingValue = this.healingPerDie * this.dicePerSeal * this.critModifier * this.numSealsConsumed;
 
         return sealSelfHealingValue;
     }

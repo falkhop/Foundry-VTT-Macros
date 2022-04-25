@@ -63,6 +63,7 @@ class ActionSummary {
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
         this.dicePerSeal = 2;
+        this.healingPerDie = 2;
         this.critModifier = 1;
         this.attackRoll = null;
         this.damageRoll = null;
@@ -111,7 +112,7 @@ class ActionSummary {
         let sealSelfHealingValue = "";
         let numSealDice = this.dicePerSeal * this.critModifier * this.numSealsConsumed;
         if (this.isConsumingSeal) {
-            sealSelfHealingValue = 2 * numSealDice;
+            sealSelfHealingValue = this.healingPerDie * numSealDice;
         }
 
         return sealSelfHealingValue;
@@ -169,6 +170,13 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll, selfHealing)
     let roll = Roll.fromTerms([pool]);
     let d20Roll = attackRoll.dice[0].total;
     let d20IconClass = d20Roll == 20 ? " max" : d20Roll == 1 ? " min" : "";
+    let healingOutput = selfHealing > 0 ? 
+        `<h4 class="dice-total">Healing Total: ${selfHealing}</h4>                
+            <div class="dice-tooltip">
+                <section class="tooltip-part">
+                    <div>Heal 2 points per Seal die rolled</div>
+                </section>
+            </div>` : "";
     let chatOptions = {
         type: CONST.CHAT_MESSAGE_TYPES.ROLL,
         roll: roll,
@@ -177,25 +185,25 @@ let outputChatMessageResult = (messageText, attackRoll, damageRoll, selfHealing)
             <div class="dice-roll">
                 <b>${messageText}</b>
                 <div class="dice-result">
-                <h4 class="dice-total">Attack Total: ${attackRoll.total}</h4>
-                <div class="dice-tooltip">
-                    <section class="tooltip-part">
-                    <div class="dice">
-                        <div>${attackRoll.formula} = ${attackRoll.total}</div>
-                        <div>${attackRoll.result} = ${attackRoll.total}</div>
-                        <ol class="dice-rolls">
-                            <li class="roll die d20${d20IconClass}">${d20Roll}</li>
-                        </ol>
-                    </section>
-                </div>
-                <h4 class="dice-total">Damage Total: ${damageRoll.total}</h4>
-                <div class="dice-tooltip">
-                    <section class="tooltip-part">
-                        <div>${damageRoll.formula} = ${damageRoll.total}</div>
-                        <div>${damageRoll.result} = ${damageRoll.total}</div>
-                    </section>
-                </div>
-                <h4 class="dice-total">Healing Total: ${selfHealing}</h4>
+                    <h4 class="dice-total">Attack Total: ${attackRoll.total}</h4>
+                    <div class="dice-tooltip">
+                        <section class="tooltip-part">
+                        <div class="dice">
+                            <div>${attackRoll.formula} = ${attackRoll.total}</div>
+                            <div>${attackRoll.result} = ${attackRoll.total}</div>
+                            <ol class="dice-rolls">
+                                <li class="roll die d20${d20IconClass}">${d20Roll}</li>
+                            </ol>
+                        </section>
+                    </div>
+                    <h4 class="dice-total">Damage Total: ${damageRoll.total}</h4>
+                    <div class="dice-tooltip">
+                        <section class="tooltip-part">
+                            <div>${damageRoll.formula} = ${damageRoll.total}</div>
+                            <div>${damageRoll.result} = ${damageRoll.total}</div>
+                        </section>
+                    </div>
+                    ${healingOutput}
                 </div>
             </div>
         `

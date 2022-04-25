@@ -67,7 +67,7 @@ class ActionSummary {
     }
 
     getMessage() {
-        let messageText = `Consuming ${this.numSealsConsumed} Seal(s)`;
+        let messageText = this.numSealsConsumed > 1 ? `Consuming ${this.numSealsConsumed} Seals`: `Consuming ${this.numSealsConsumed} Seal`;
         if (this.isCrit) {
             messageText += ` on Critical Hit`
         }
@@ -119,7 +119,7 @@ let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
                 <h4 class="dice-total">Healing Total: ${selfHealing}</h4>
                 <div class="dice-tooltip">
                     <section class="tooltip-part">
-                        <div>Heal 2 points per die rolled</div>
+                        <div>Heal 2 points per Seal die rolled</div>
                     </section>
                 </div>
                 </div>

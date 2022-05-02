@@ -101,7 +101,7 @@ class ActionSummary {
         this.damageRoll = null;
     }
 
-    getWeaponStats() {
+    getSelectedWeaponStats() {
         let equippedWeapons = UserInterface.getEquippedWeapons();
         let weapon = equippedWeapons.filter(i => i._id === this.selectedWeaponId)[0];
         console.log(weapon);
@@ -111,7 +111,7 @@ class ActionSummary {
             ability: weapon.ability,
             proficient: weapon.data.proficient,
             finesse: weapon.data.properties.fin,
-            attackBonus: weapon.data.attackBonus,
+            attackBonus: parseInt(weapon.data.attackBonus.at(-1)),
             damageFormula: weapon.data.damage.parts[0]
         }
         console.log("weaponStats:", weaponStats);
@@ -120,7 +120,7 @@ class ActionSummary {
     }
 
     getAttackModifier() {
-        let weapon = this.getWeaponStats();
+        let weapon = this.getSelectedWeaponStats();
         let attackModifier = 0;
         if(weapon.ability === undefined && weapon.finesse == true){
             if(token.actor.data.data.abilities.dex.mod >= token.actor.data.data.abilities.str.mod){
@@ -134,11 +134,12 @@ class ActionSummary {
             attackModifier += token.actor.data.data.abilities.str.mod;
         }
         
-        console.log("before proficiency: ", attackModifier)
         if(weapon.proficient == true){
             attackModifier += token.actor.data.data.attributes.prof;
         }
+
         attackModifier += weapon.attackBonus;
+
         return attackModifier;
     }
 
@@ -184,7 +185,7 @@ class ActionSummary {
     }
 
     getAttackMessage() {
-        let weaponName = this.getWeaponStats().name;
+        let weaponName = this.getSelectedWeaponStats().name;
         let messageText = `${weaponName}, ${this.attackType}`;
 
         if (this.isSharpshooter) {
@@ -200,6 +201,22 @@ class ActionSummary {
         }
 
         return messageText;
+    }
+
+    performAnimation() {
+        let animationMacro = game.macros.find(m => m.name === "Arrows");
+        let targets = [];
+        
+        game.user.targets.forEach(i => {
+            let name = i.name;
+            targets.push(name)});
+        
+        if (targets.length > 0) {
+            animationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.")
+        }
+        
     }
 
     async performAttackRollAsync(){
@@ -258,12 +275,14 @@ let primaryButtonCallback = async (html) => {
     let actionSummary = new ActionSummary(html);
     await actionSummary.performAttackRollAsync();
     await actionSummary.performDamageRollAsync();
-
+    
     outputChatMessageResult(
         messageText=actionSummary.getAttackMessage(),
         attackRoll=actionSummary.attackRoll,
         damageRoll=actionSummary.damageRoll
     );
+    
+    actionSummary.performAnimation();
 }
 
 async function main(){

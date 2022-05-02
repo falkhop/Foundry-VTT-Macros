@@ -160,6 +160,22 @@ class ActionSummary {
         return messageText;
     }
 
+    performAnimation() {
+        let animationMacro = game.macros.find(m => m.name === "Arrows");
+        let targets = [];
+        
+        game.user.targets.forEach(i => {
+            let name = i.name;
+            targets.push(name)});
+        
+        if (targets.length > 0) {
+            animationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.")
+        }
+        
+    }
+
     async performAttackRollAsync() {
         let attackFormula = this.getAttackFormula();
         this.attackRoll = await new Roll(attackFormula).roll();
@@ -222,6 +238,8 @@ let primaryButtonCallback = async (html) => {
         attackRoll=actionSummary.attackRoll,
         damageRoll=actionSummary.damageRoll
     );
+
+    actionSummary.performAnimation();
 }
 
 async function main(){

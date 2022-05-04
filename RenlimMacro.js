@@ -136,6 +136,31 @@ class ActionSummary {
         return messageText;
     }
 
+    async performAnimation() {
+        let greatswordAnimationMacro = game.macros.find(m => m.name === "GreatswordAnimation");
+        let placeSealAnimationMacro = game.macros.find(m => m.name === "PlaceSealAnimation");
+        let consumeSealAnimationMacro = game.macros.find(m => m.name === "ConsumeSealAnimation");
+        let targets = [];
+        
+        game.user.targets.forEach(i => {
+            let name = i.name;
+            targets.push(name)});
+        
+        greatswordAnimationMacro.execute();
+        
+        if (targets.length > 0 && this.placingSeal) {
+            placeSealAnimationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.");
+        }
+        
+        if(this.isConsumingSeal) {
+            consumeSealAnimationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.");
+        }
+    }
+
     async performAttackRollAsync() {
         let attackFormula = this.getAttackFormula();
         this.attackRoll = await new Roll(attackFormula).roll();
@@ -223,6 +248,8 @@ let primaryButtonCallback = async (html) => {
         damageRoll=actionSummary.damageRoll,
         selfHealing=actionSummary.getSelfHealing()
     );
+
+    await actionSummary.performAnimation();
 }
 
 async function main(){

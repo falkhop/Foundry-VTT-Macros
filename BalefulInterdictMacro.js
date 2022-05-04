@@ -29,6 +29,9 @@ const mainHtml = `
             damage your seals deals.
             </p>
         </div>
+        <div>
+            <label for="place-seal">Place Seal</label>
+            <input type="checkbox" id="place-seal" value="place-seal">
         <div>    
             <label for="consume-seal">Consume Seal(s)</label>
             <input style="width: 30px; vertical-align: 1px;" type="number" id="number-seals-consumed" name="number-seals-consumed" min="1" value="1">
@@ -44,6 +47,7 @@ const mainHtml = `
 
 class ActionSummary {
     constructor(html) {
+        this.placingSeal = html.find('[id="place-seal"]')[0].checked;
         this.numSealsConsumed = html.find('[id="number-seals-consumed"]').val();
         this.isCrit = html.find('[id="is-crit"]')[0].checked;
 
@@ -51,6 +55,15 @@ class ActionSummary {
         this.healingPerDie = 2;
         this.critModifier = 1;
         this.damageRoll = null;
+    }
+
+    applySealToTarget(){
+        let placeSealMacro = game.macros.find(m => m.name === "PlaceSeal");
+
+        if(this.placingSeal){
+            placeSealMacro.execute();
+        }
+
     }
 
     getDamageFormula() {
@@ -73,6 +86,28 @@ class ActionSummary {
         }
 
         return messageText;
+    }
+
+    performAnimation() {
+        let placeSealAnimationMacro = game.macros.find(m => m.name === "PlaceSealAnimation");
+        let consumeSealAnimationMacro = game.macros.find(m => m.name === "ConsumeSealAnimation");
+        let targets = [];
+        
+        game.user.targets.forEach(i => {
+            let name = i.name;
+            targets.push(name)});
+        
+        if (targets.length > 0 && this.placingSeal) {
+            placeSealAnimationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.");
+        }
+        
+        if(this.numSealsConsumed > 0) {
+            consumeSealAnimationMacro.execute();
+        } else {
+            console.log("Animation cancelled: No Target Found.");
+        }
     }
 
     async performDamageRollAsync() {
@@ -139,16 +174,18 @@ let primaryButtonCallback = async (html) => {
         damageRoll=actionSummary.damageRoll,
         selfHealing=actionSummary.getSelfHealing()
     );
+
+    actionSummary.performAnimation();
 }
 
 async function main(){
     let dialog = new Dialog({
-        title: "Consume Seals",
+        title: "Baleful Interdict",
         content: mainHtml,
         buttons: {
             one: {
                 icon:"<i class='fas fa-skull'></i>",
-                label:"Consume",
+                label:"Seal Fate",
                 callback: primaryButtonCallback
             },
             no: {

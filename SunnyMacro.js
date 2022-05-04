@@ -203,8 +203,8 @@ class ActionSummary {
         return messageText;
     }
 
-    performAnimation() {
-        let animationMacro = game.macros.find(m => m.name === "Arrows");
+    async performAnimation() {
+        let animationMacro = game.macros.find(m => m.name === "ArrowAnimation");
         let targets = [];
         
         game.user.targets.forEach(i => {
@@ -281,8 +281,8 @@ let primaryButtonCallback = async (html) => {
         attackRoll=actionSummary.attackRoll,
         damageRoll=actionSummary.damageRoll
     );
-    
-    actionSummary.performAnimation();
+
+    await actionSummary.performAnimation();
 }
 
 async function main(){

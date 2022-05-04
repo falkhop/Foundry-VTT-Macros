@@ -6,4 +6,8 @@ Additional, these macros were made for Foundry Version 9, and require some or al
  - Combat Utility Belt https://foundryvtt.com/packages/combat-utility-belt/
  - Dice So Nice! https://foundryvtt.com/packages/dice-so-nice
 
+For Animations:
+ - JB2A Animations (Free)
+ - Sequencer
+
 This content is not formatted to be directly downloaded and imported into Foundry, but rather can be copy/pasted into the "Command" section of "Script" type macros.

@@ -30,15 +30,16 @@ const mainHtml = `
             </p>
         </div>
         <div>
-            <label for="place-seal">Place Seal</label>
             <input type="checkbox" id="place-seal" value="place-seal">
-        <div>    
+            <label for="place-seal">Place Seal</label>
+        <div>
+            <input type="checkbox" id="consume-seal" value="consume-seal" onclick="var input = document.getElementById('number-seals-consumed'); if(this.checked){ input.disabled = false; input.focus();}else{input.disabled=true;}">  
             <label for="consume-seal">Consume Seal(s)</label>
-            <input style="width: 30px; vertical-align: 1px;" type="number" id="number-seals-consumed" name="number-seals-consumed" min="1" value="1">
+            <input style="width: 30px; vertical-align: 1px;" type="number" id="number-seals-consumed" name="number-seals-consumed" disabled="disabled">
         </div>
         <div>
-            <label for="is-crit">Is Crit?</label>
             <input type="checkbox" id="is-crit" value="is-crit">
+            <label for="is-crit">Is Crit?</label>
         </div>
         </fieldset>
     </form>
@@ -47,7 +48,8 @@ const mainHtml = `
 
 class ActionSummary {
     constructor(html) {
-        this.placingSeal = html.find('[id="place-seal"]')[0].checked;
+        this.isPlacingSeal = html.find('[id="place-seal"]')[0].checked;
+        this.isConsumingSeal = html.find('[id="consume-seal"]')[0].checked;
         this.numSealsConsumed = html.find('[id="number-seals-consumed"]').val();
         this.isCrit = html.find('[id="is-crit"]')[0].checked;
 
@@ -60,7 +62,7 @@ class ActionSummary {
     applySealToTarget(){
         let placeSealMacro = game.macros.find(m => m.name === "PlaceSeal");
 
-        if(this.placingSeal){
+        if(this.isPlacingSeal){
             placeSealMacro.execute();
         }
 
@@ -68,27 +70,42 @@ class ActionSummary {
 
     getDamageFormula() {
         let numSealDice = this.dicePerSeal * this.critModifier * this.numSealsConsumed;
-        let damageFormula = `${numSealDice}d6[necrotic]`;
+        let damageFormula = "0";
+
+        if (this.isConsumingSeal) {
+            damageFormula += `${numSealDice}d6[necrotic]`;
+        }
 
         return damageFormula;
     }
 
-    getSelfHealing(){
+
+    getSelfHealing() {
         let sealSelfHealingValue = this.healingPerDie * this.dicePerSeal * this.critModifier * this.numSealsConsumed;
 
         return sealSelfHealingValue;
     }
 
     getMessage() {
-        let messageText = this.numSealsConsumed > 1 ? `Consuming ${this.numSealsConsumed} Seals`: `Consuming ${this.numSealsConsumed} Seal`;
+        let messageText = this.numSealsConsumed > 1 ? `Consuming ${this.numSealsConsumed} Seals.`: `Consuming ${this.numSealsConsumed} Seal.`;
         if (this.isCrit) {
-            messageText += ` on Critical Hit`
+            messageText += ` Critical Hit!`
         }
 
         return messageText;
     }
 
-    performAnimation() {
+    getAnimationList(){
+        //make a list of animations
+        let animationList = [];
+        //find animation macros based on selections made in the modal
+        //add macros to list
+        //make the list available to performAnimations
+        return animationList;
+    }
+
+    async performAnimation() {
+        let animationList = this.getAnimationList();
         let placeSealAnimationMacro = game.macros.find(m => m.name === "PlaceSealAnimation");
         let consumeSealAnimationMacro = game.macros.find(m => m.name === "ConsumeSealAnimation");
         let targets = [];
@@ -97,7 +114,7 @@ class ActionSummary {
             let name = i.name;
             targets.push(name)});
         
-        if (targets.length > 0 && this.placingSeal) {
+        if (targets.length > 0 && this.isPlacingSeal) {
             placeSealAnimationMacro.execute();
         } else {
             console.log("Animation cancelled: No Target Found.");
@@ -125,7 +142,7 @@ class ActionSummary {
         let updatedHealth;
 
         if(currentHealth + selfHealingValue < maxHealth){
-            updatedHealth = currentHealth + selfHealingValue;
+            updatedHealth = currentHealth + selfHealingValue; 
         } else {
             updatedHealth = maxHealth;
         }
@@ -134,17 +151,13 @@ class ActionSummary {
     }
 }
 
-let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
+let outputChatMessageResult = (messageText, damageRoll, selfHealing, isPlacingSeal) => {
     let pool = PoolTerm.fromRolls([damageRoll]);
     let roll = Roll.fromTerms([pool]);
-    let chatOptions = {
-        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
-        roll: roll,
-        rollMode: game.settings.get("core", "rollMode"),
-        content: `
-            <div class="dice-roll">
-                <b>${messageText}</b>
-                <div class="dice-result">
+    let placingSealContent = isPlacingSeal ? `<b>Seal placed on target.</b>` : "";
+    let consumingSealContent = selfHealing > 0 ? `
+            <b>${messageText}</b>
+            <div class="dice-result">
                 <h4 class="dice-total">Damage Total: ${damageRoll.total}</h4>
                 <div class="dice-tooltip">
                     <section class="tooltip-part">
@@ -157,7 +170,15 @@ let outputChatMessageResult = (messageText, damageRoll, selfHealing) => {
                         <div>Heal 2 points per Seal die rolled</div>
                     </section>
                 </div>
-                </div>
+            </div>` : "";
+    let chatOptions = {
+        type: CONST.CHAT_MESSAGE_TYPES.ROLL,
+        roll: roll,
+        rollMode: game.settings.get("core", "rollMode"),
+        content: `
+            <div class="dice-roll">
+                ${placingSealContent}
+                ${consumingSealContent}
             </div>
         `
     }  
@@ -172,10 +193,11 @@ let primaryButtonCallback = async (html) => {
     outputChatMessageResult(
         messageText=actionSummary.getMessage(),
         damageRoll=actionSummary.damageRoll,
-        selfHealing=actionSummary.getSelfHealing()
+        selfHealing=actionSummary.getSelfHealing(),
+        isPlacingSeal=actionSummary.isPlacingSeal
     );
 
-    actionSummary.performAnimation();
+    await actionSummary.performAnimation();
 }
 
 async function main(){

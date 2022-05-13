@@ -98,8 +98,11 @@ class ActionSummary {
 
         this.attackStatModifier = token.actor.data.data.abilities.dex.mod;
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
+        this.characterClasses = token.actor.data.items.toObject().filter(i => i.type === "class")
+        this.rogueLevel = this.characterClasses[0].data.levels;
+
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
-        this.sneakAttackDice = 3;
+        this.sneakAttackDice = Math.ceil(this.rogueLevel/2);
         this.critModifier = 1;
         this.attackRoll = null;
         this.damageRoll = null;

@@ -1,4 +1,4 @@
-// A macro to assist with Consuming Seals for Baleful Interdict, a class feature for illriggers (a Matthew Colville custom class).
+// A macro to assist with applying and consuming seals for the Baleful Interdictclass feature for illriggers (a Matthew Colville custom class).
 // https://www.titanatelier.com/wp-content/uploads/2021/04/Illrigger_v2.4.pdf
 
 const mainHtml = `

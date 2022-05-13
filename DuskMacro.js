@@ -99,7 +99,7 @@ class ActionSummary {
         this.attackStatModifier = token.actor.data.data.abilities.dex.mod;
         this.proficiencyModifier = token.actor.data.data.attributes.prof;
         this.attackModifier = this.attackStatModifier + this.proficiencyModifier;
-        this.sneakAttackDice = 2;
+        this.sneakAttackDice = 3;
         this.critModifier = 1;
         this.attackRoll = null;
         this.damageRoll = null;
@@ -144,7 +144,7 @@ class ActionSummary {
         }
 
         if (this.isSneakAttack) {
-            damageFormula += `+ ${numSneakAttackDice}d6`;
+            damageFormula += ` + ${numSneakAttackDice}d6`;
         }
         
         damageFormula += `+ ${this.attackModifier}`;
